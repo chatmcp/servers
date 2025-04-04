@@ -1,4 +1,3 @@
-
 # Sequential Thinking MCP Server
 
 An MCP server implementation that provides a tool for dynamic and reflective problem-solving through a structured thinking process.
@@ -18,6 +17,7 @@ An MCP server implementation that provides a tool for dynamic and reflective pro
 Facilitates a detailed, step-by-step thinking process for problem-solving and analysis.
 
 **Inputs:**
+
 - `thought` (string): The current thinking step
 - `nextThoughtNeeded` (boolean): Whether another thought step is needed
 - `thoughtNumber` (integer): Current thought number
@@ -31,6 +31,7 @@ Facilitates a detailed, step-by-step thinking process for problem-solving and an
 ## Usage
 
 The Sequential Thinking tool is designed for:
+
 - Breaking down complex problems into steps
 - Planning and design with room for revision
 - Analysis that might need course correction
@@ -51,10 +52,7 @@ Add this to your `claude_desktop_config.json`:
   "mcpServers": {
     "sequential-thinking": {
       "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-sequential-thinking"
-      ]
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
     }
   }
 }
@@ -67,12 +65,7 @@ Add this to your `claude_desktop_config.json`:
   "mcpServers": {
     "sequentialthinking": {
       "command": "docker",
-      "args": [
-        "run",
-        "--rm",
-        "-i",
-        "mcp/sequentialthinking"
-      ]
+      "args": ["run", "--rm", "-i", "mcp/sequentialthinking"]
     }
   }
 }
