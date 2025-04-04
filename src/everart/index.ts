@@ -11,6 +11,9 @@ import {
 import fetch from "node-fetch";
 import open from "open";
 
+import { getParamValue, getAuthValue } from "@chatmcp/sdk/utils/index.js";
+import { RestServerTransport } from "@chatmcp/sdk/server/rest.js";
+
 const server = new Server(
   {
     name: "example-servers/everart",
@@ -21,15 +24,19 @@ const server = new Server(
       tools: {},
       resources: {}, // Required for image resources
     },
-  },
+  }
 );
 
-if (!process.env.EVERART_API_KEY) {
-  console.error("EVERART_API_KEY environment variable is not set");
-  process.exit(1);
-}
+const everartApiKey = getParamValue("EVERART_API_KEY") || "";
 
-const client = new EverArt.default(process.env.EVERART_API_KEY);
+const mode = getParamValue("mode") || "stdio";
+const port = getParamValue("port") || 9593;
+const endpoint = getParamValue("endpoint") || "/rest";
+
+// if (!process.env.EVERART_API_KEY) {
+//   console.error("EVERART_API_KEY environment variable is not set");
+//   process.exit(1);
+// }
 
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: [
@@ -98,6 +105,13 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
 });
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  const apiKey = everartApiKey || getAuthValue(request, "everart_api_key");
+  if (!apiKey) {
+    throw new Error("EverArt API Key not set");
+  }
+
+  const client = new EverArt.default(apiKey);
+
   if (request.params.name === "generate_image") {
     try {
       const {
@@ -115,12 +129,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           imageCount: image_count,
           height: 1024,
           width: 1024,
-        },
+        }
       );
 
       // Wait for generation to complete
       const completedGen = await client.v1.generations.fetchWithPolling(
-        generation[0].id,
+        generation[0].id
       );
 
       const imgUrl = completedGen.image_url;
@@ -152,6 +166,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 });
 
 async function runServer() {
+  if (mode === "rest") {
+    const transport = new RestServerTransport({
+      port,
+      endpoint,
+    });
+    await server.connect(transport);
+
+    await transport.startServer();
+
+    return;
+  }
+
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error("EverArt MCP Server running on stdio");
