@@ -52,28 +52,43 @@ export const UpdateIssueOptionsSchema = z.object({
   state: z.enum(["open", "closed"]).optional(),
 });
 
-export async function getIssue(owner: string, repo: string, issue_number: number) {
-  return githubRequest(`https://api.github.com/repos/${owner}/${repo}/issues/${issue_number}`);
+export async function getIssue(
+  accessToken: string,
+  owner: string,
+  repo: string,
+  issue_number: number
+) {
+  return githubRequest(
+    accessToken,
+    `https://api.github.com/repos/${owner}/${repo}/issues/${issue_number}`
+  );
 }
 
 export async function addIssueComment(
+  accessToken: string,
   owner: string,
   repo: string,
   issue_number: number,
   body: string
 ) {
-  return githubRequest(`https://api.github.com/repos/${owner}/${repo}/issues/${issue_number}/comments`, {
-    method: "POST",
-    body: { body },
-  });
+  return githubRequest(
+    accessToken,
+    `https://api.github.com/repos/${owner}/${repo}/issues/${issue_number}/comments`,
+    {
+      method: "POST",
+      body: { body },
+    }
+  );
 }
 
 export async function createIssue(
+  accessToken: string,
   owner: string,
   repo: string,
   options: z.infer<typeof CreateIssueOptionsSchema>
 ) {
   return githubRequest(
+    accessToken,
     `https://api.github.com/repos/${owner}/${repo}/issues`,
     {
       method: "POST",
@@ -83,6 +98,7 @@ export async function createIssue(
 }
 
 export async function listIssues(
+  accessToken: string,
   owner: string,
   repo: string,
   options: Omit<z.infer<typeof ListIssuesOptionsSchema>, "owner" | "repo">
@@ -94,21 +110,27 @@ export async function listIssues(
     per_page: options.per_page?.toString(),
     since: options.since,
     sort: options.sort,
-    state: options.state
+    state: options.state,
   };
 
   return githubRequest(
+    accessToken,
     buildUrl(`https://api.github.com/repos/${owner}/${repo}/issues`, urlParams)
   );
 }
 
 export async function updateIssue(
+  accessToken: string,
   owner: string,
   repo: string,
   issue_number: number,
-  options: Omit<z.infer<typeof UpdateIssueOptionsSchema>, "owner" | "repo" | "issue_number">
+  options: Omit<
+    z.infer<typeof UpdateIssueOptionsSchema>,
+    "owner" | "repo" | "issue_number"
+  >
 ) {
   return githubRequest(
+    accessToken,
     `https://api.github.com/repos/${owner}/${repo}/issues/${issue_number}`,
     {
       method: "PATCH",

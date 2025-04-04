@@ -6,7 +6,7 @@ type RequestOptions = {
   method?: string;
   body?: unknown;
   headers?: Record<string, string>;
-}
+};
 
 async function parseResponseBody(response: Response): Promise<unknown> {
   const contentType = response.headers.get("content-type");
@@ -16,7 +16,10 @@ async function parseResponseBody(response: Response): Promise<unknown> {
   return response.text();
 }
 
-export function buildUrl(baseUrl: string, params: Record<string, string | number | undefined>): string {
+export function buildUrl(
+  baseUrl: string,
+  params: Record<string, string | number | undefined>
+): string {
   const url = new URL(baseUrl);
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined) {
@@ -29,18 +32,19 @@ export function buildUrl(baseUrl: string, params: Record<string, string | number
 const USER_AGENT = `modelcontextprotocol/servers/github/v${VERSION} ${getUserAgent()}`;
 
 export async function githubRequest(
+  accessToken: string,
   url: string,
   options: RequestOptions = {}
 ): Promise<unknown> {
   const headers: Record<string, string> = {
-    "Accept": "application/vnd.github.v3+json",
+    Accept: "application/vnd.github.v3+json",
     "Content-Type": "application/json",
     "User-Agent": USER_AGENT,
     ...options.headers,
   };
 
-  if (process.env.GITHUB_PERSONAL_ACCESS_TOKEN) {
-    headers["Authorization"] = `Bearer ${process.env.GITHUB_PERSONAL_ACCESS_TOKEN}`;
+  if (accessToken) {
+    headers["Authorization"] = `Bearer ${accessToken}`;
   }
 
   const response = await fetch(url, {
@@ -108,29 +112,47 @@ export function validateOwnerName(owner: string): string {
 }
 
 export async function checkBranchExists(
+  accessToken: string,
   owner: string,
   repo: string,
   branch: string
 ): Promise<boolean> {
   try {
     await githubRequest(
+      accessToken,
       `https://api.github.com/repos/${owner}/${repo}/branches/${branch}`
     );
     return true;
   } catch (error) {
-    if (error && typeof error === "object" && "status" in error && error.status === 404) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      error.status === 404
+    ) {
       return false;
     }
     throw error;
   }
 }
 
-export async function checkUserExists(username: string): Promise<boolean> {
+export async function checkUserExists(
+  accessToken: string,
+  username: string
+): Promise<boolean> {
   try {
-    await githubRequest(`https://api.github.com/users/${username}`);
+    await githubRequest(
+      accessToken,
+      `https://api.github.com/users/${username}`
+    );
     return true;
   } catch (error) {
-    if (error && typeof error === "object" && "status" in error && error.status === 404) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      error.status === 404
+    ) {
       return false;
     }
     throw error;

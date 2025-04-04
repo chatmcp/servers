@@ -6,10 +6,11 @@ export const ListCommitsSchema = z.object({
   repo: z.string(),
   sha: z.string().optional(),
   page: z.number().optional(),
-  perPage: z.number().optional()
+  perPage: z.number().optional(),
 });
 
 export async function listCommits(
+  accessToken: string,
   owner: string,
   repo: string,
   page?: number,
@@ -17,10 +18,11 @@ export async function listCommits(
   sha?: string
 ) {
   return githubRequest(
+    accessToken,
     buildUrl(`https://api.github.com/repos/${owner}/${repo}/commits`, {
       page: page?.toString(),
       per_page: perPage?.toString(),
-      sha
+      sha,
     })
   );
 }

@@ -22,7 +22,12 @@ export const CreateOrUpdateFileSchema = z.object({
   content: z.string().describe("Content of the file"),
   message: z.string().describe("Commit message"),
   branch: z.string().describe("Branch to create/update the file in"),
-  sha: z.string().optional().describe("SHA of the file being replaced (required when updating existing files)"),
+  sha: z
+    .string()
+    .optional()
+    .describe(
+      "SHA of the file being replaced (required when updating existing files)"
+    ),
 });
 
 export const GetFileContentsSchema = z.object({
@@ -66,10 +71,13 @@ export const GitHubCreateUpdateFileResponseSchema = z.object({
 
 // Type exports
 export type FileOperation = z.infer<typeof FileOperationSchema>;
-export type GitHubCreateUpdateFileResponse = z.infer<typeof GitHubCreateUpdateFileResponseSchema>;
+export type GitHubCreateUpdateFileResponse = z.infer<
+  typeof GitHubCreateUpdateFileResponseSchema
+>;
 
 // Function implementations
 export async function getFileContents(
+  accessToken: string,
   owner: string,
   repo: string,
   path: string,
@@ -80,7 +88,7 @@ export async function getFileContents(
     url += `?ref=${branch}`;
   }
 
-  const response = await githubRequest(url);
+  const response = await githubRequest(accessToken, url);
   const data = GitHubContentSchema.parse(response);
 
   // If it's a file, decode the content
@@ -92,6 +100,7 @@ export async function getFileContents(
 }
 
 export async function createOrUpdateFile(
+  accessToken: string,
   owner: string,
   repo: string,
   path: string,
@@ -105,12 +114,20 @@ export async function createOrUpdateFile(
   let currentSha = sha;
   if (!currentSha) {
     try {
-      const existingFile = await getFileContents(owner, repo, path, branch);
+      const existingFile = await getFileContents(
+        accessToken,
+        owner,
+        repo,
+        path,
+        branch
+      );
       if (!Array.isArray(existingFile)) {
         currentSha = existingFile.sha;
       }
     } catch (error) {
-      console.error("Note: File does not exist in branch, will create new file");
+      console.error(
+        "Note: File does not exist in branch, will create new file"
+      );
     }
   }
 
@@ -122,7 +139,7 @@ export async function createOrUpdateFile(
     ...(currentSha ? { sha: currentSha } : {}),
   };
 
-  const response = await githubRequest(url, {
+  const response = await githubRequest(accessToken, url, {
     method: "PUT",
     body,
   });
@@ -131,6 +148,7 @@ export async function createOrUpdateFile(
 }
 
 async function createTree(
+  accessToken: string,
   owner: string,
   repo: string,
   files: FileOperation[],
@@ -144,6 +162,7 @@ async function createTree(
   }));
 
   const response = await githubRequest(
+    accessToken,
     `https://api.github.com/repos/${owner}/${repo}/git/trees`,
     {
       method: "POST",
@@ -158,6 +177,7 @@ async function createTree(
 }
 
 async function createCommit(
+  accessToken: string,
   owner: string,
   repo: string,
   message: string,
@@ -165,6 +185,7 @@ async function createCommit(
   parents: string[]
 ) {
   const response = await githubRequest(
+    accessToken,
     `https://api.github.com/repos/${owner}/${repo}/git/commits`,
     {
       method: "POST",
@@ -180,12 +201,14 @@ async function createCommit(
 }
 
 async function updateReference(
+  accessToken: string,
   owner: string,
   repo: string,
   ref: string,
   sha: string
 ) {
   const response = await githubRequest(
+    accessToken,
     `https://api.github.com/repos/${owner}/${repo}/git/refs/${ref}`,
     {
       method: "PATCH",
@@ -200,6 +223,7 @@ async function updateReference(
 }
 
 export async function pushFiles(
+  accessToken: string,
   owner: string,
   repo: string,
   branch: string,
@@ -207,13 +231,27 @@ export async function pushFiles(
   message: string
 ) {
   const refResponse = await githubRequest(
+    accessToken,
     `https://api.github.com/repos/${owner}/${repo}/git/refs/heads/${branch}`
   );
 
   const ref = GitHubReferenceSchema.parse(refResponse);
   const commitSha = ref.object.sha;
 
-  const tree = await createTree(owner, repo, files, commitSha);
-  const commit = await createCommit(owner, repo, message, tree.sha, [commitSha]);
-  return await updateReference(owner, repo, `heads/${branch}`, commit.sha);
+  const tree = await createTree(accessToken, owner, repo, files, commitSha);
+  const commit = await createCommit(
+    accessToken,
+    owner,
+    repo,
+    message,
+    tree.sha,
+    [commitSha]
+  );
+  return await updateReference(
+    accessToken,
+    owner,
+    repo,
+    `heads/${branch}`,
+    commit.sha
+  );
 }

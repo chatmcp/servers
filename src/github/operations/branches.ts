@@ -12,26 +12,39 @@ export const CreateBranchSchema = z.object({
   owner: z.string().describe("Repository owner (username or organization)"),
   repo: z.string().describe("Repository name"),
   branch: z.string().describe("Name for the new branch"),
-  from_branch: z.string().optional().describe("Optional: source branch to create from (defaults to the repository's default branch)"),
+  from_branch: z
+    .string()
+    .optional()
+    .describe(
+      "Optional: source branch to create from (defaults to the repository's default branch)"
+    ),
 });
 
 // Type exports
 export type CreateBranchOptions = z.infer<typeof CreateBranchOptionsSchema>;
 
 // Function implementations
-export async function getDefaultBranchSHA(owner: string, repo: string): Promise<string> {
+export async function getDefaultBranchSHA(
+  accessToken: string,
+  owner: string,
+  repo: string
+): Promise<string> {
   try {
     const response = await githubRequest(
+      accessToken,
       `https://api.github.com/repos/${owner}/${repo}/git/refs/heads/main`
     );
     const data = GitHubReferenceSchema.parse(response);
     return data.object.sha;
   } catch (error) {
     const masterResponse = await githubRequest(
+      accessToken,
       `https://api.github.com/repos/${owner}/${repo}/git/refs/heads/master`
     );
     if (!masterResponse) {
-      throw new Error("Could not find default branch (tried 'main' and 'master')");
+      throw new Error(
+        "Could not find default branch (tried 'main' and 'master')"
+      );
     }
     const data = GitHubReferenceSchema.parse(masterResponse);
     return data.object.sha;
@@ -39,6 +52,7 @@ export async function getDefaultBranchSHA(owner: string, repo: string): Promise<
 }
 
 export async function createBranch(
+  accessToken: string,
   owner: string,
   repo: string,
   options: CreateBranchOptions
@@ -46,6 +60,7 @@ export async function createBranch(
   const fullRef = `refs/heads/${options.ref}`;
 
   const response = await githubRequest(
+    accessToken,
     `https://api.github.com/repos/${owner}/${repo}/git/refs`,
     {
       method: "POST",
@@ -60,11 +75,13 @@ export async function createBranch(
 }
 
 export async function getBranchSHA(
+  accessToken: string,
   owner: string,
   repo: string,
   branch: string
 ): Promise<string> {
   const response = await githubRequest(
+    accessToken,
     `https://api.github.com/repos/${owner}/${repo}/git/refs/heads/${branch}`
   );
 
@@ -73,6 +90,7 @@ export async function getBranchSHA(
 }
 
 export async function createBranchFromRef(
+  accessToken: string,
   owner: string,
   repo: string,
   newBranch: string,
@@ -80,24 +98,26 @@ export async function createBranchFromRef(
 ): Promise<z.infer<typeof GitHubReferenceSchema>> {
   let sha: string;
   if (fromBranch) {
-    sha = await getBranchSHA(owner, repo, fromBranch);
+    sha = await getBranchSHA(accessToken, owner, repo, fromBranch);
   } else {
-    sha = await getDefaultBranchSHA(owner, repo);
+    sha = await getDefaultBranchSHA(accessToken, owner, repo);
   }
 
-  return createBranch(owner, repo, {
+  return createBranch(accessToken, owner, repo, {
     ref: newBranch,
     sha,
   });
 }
 
 export async function updateBranch(
+  accessToken: string,
   owner: string,
   repo: string,
   branch: string,
   sha: string
 ): Promise<z.infer<typeof GitHubReferenceSchema>> {
   const response = await githubRequest(
+    accessToken,
     `https://api.github.com/repos/${owner}/${repo}/git/refs/heads/${branch}`,
     {
       method: "PATCH",
