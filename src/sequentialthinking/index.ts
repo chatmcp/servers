@@ -2,6 +2,8 @@
 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { RestServerTransport } from "@chatmcp/sdk/server/rest.js";
+import { getParamValue } from "@chatmcp/sdk/utils/index.js";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
@@ -266,7 +268,23 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   };
 });
 
+const mode = getParamValue("mode") || "stdio";
+const port = getParamValue("port") || 9593;
+const endpoint = getParamValue("endpoint") || "/rest";
+
 async function runServer() {
+  if (mode === "rest") {
+    const transport = new RestServerTransport({
+      port,
+      endpoint,
+    });
+    await server.connect(transport);
+
+    await transport.startServer();
+
+    return;
+  }
+  
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error("Sequential Thinking MCP Server running on stdio");
