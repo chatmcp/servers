@@ -11,6 +11,7 @@ from mcp.shared.exceptions import McpError
 
 from pydantic import BaseModel
 
+from .rest import start_http_server
 
 class TimeTools(str, Enum):
     GET_CURRENT_TIME = "get_current_time"
@@ -113,7 +114,7 @@ class TimeServer:
         )
 
 
-async def serve(local_timezone: str | None = None) -> None:
+async def serve(local_timezone: str | None = None, mode: str = "stdio", port: int = 9593, endpoint: str = "/rest") -> None:
     server = Server("mcp-time")
     time_server = TimeServer()
     local_tz = str(get_local_tz(local_timezone))
@@ -195,6 +196,10 @@ async def serve(local_timezone: str | None = None) -> None:
 
         except Exception as e:
             raise ValueError(f"Error processing mcp-server-time query: {str(e)}")
+
+    if mode == "rest" or mode == "http":
+        await start_http_server(server, port, endpoint)
+        return
 
     options = server.create_initialization_options()
     async with stdio_server() as (read_stream, write_stream):
