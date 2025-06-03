@@ -19,15 +19,10 @@
     "link-all": "npm link --workspaces"
   },
   "dependencies": {
+    "@chatmcp/sdk": "^1.0.6",
     "@modelcontextprotocol/server-everything": "*",
-    "@modelcontextprotocol/server-gdrive": "*",
-    "@modelcontextprotocol/server-postgres": "*",
-    "@modelcontextprotocol/server-puppeteer": "*",
-    "@modelcontextprotocol/server-slack": "*",
-    "@modelcontextprotocol/server-brave-search": "*",
-    "@modelcontextprotocol/server-memory": "*",
     "@modelcontextprotocol/server-filesystem": "*",
-    "@modelcontextprotocol/server-everart": "*",
+    "@modelcontextprotocol/server-memory": "*",
     "@modelcontextprotocol/server-sequential-thinking": "*"
   }
 }
