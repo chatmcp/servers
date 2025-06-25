@@ -10,6 +10,12 @@ import {
 // Fixed chalk import for ESM
 import chalk from 'chalk';
 
+import { start_http_server, getParamValue } from "./rest.js";
+
+const mode = getParamValue("mode") || "stdio";
+const port = getParamValue("port") || "9593";
+const endpoint = getParamValue("endpoint") || "/rest";
+
 interface ThoughtData {
   thought: string;
   thoughtNumber: number;
@@ -274,6 +280,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 });
 
 async function runServer() {
+  if (mode === "rest") {
+    await start_http_server(server, parseInt(port), endpoint)
+    return
+  }
+
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error("Sequential Thinking MCP Server running on stdio");
