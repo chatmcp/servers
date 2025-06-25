@@ -17,8 +17,12 @@ def main():
     )
     parser.add_argument("--proxy-url", type=str, help="Proxy URL to use for requests")
 
+    parser.add_argument("--mode", type=str, help="Server run mode", default="stdio")
+    parser.add_argument("--port", type=int, help="Server port", default=9593)
+    parser.add_argument("--endpoint", type=str, help="Server endpoint", default="/rest")
+
     args = parser.parse_args()
-    asyncio.run(serve(args.user_agent, args.ignore_robots_txt, args.proxy_url))
+    asyncio.run(serve(args.user_agent, args.ignore_robots_txt, args.proxy_url, args.mode, args.port, args.endpoint))
 
 
 if __name__ == "__main__":

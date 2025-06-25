@@ -20,6 +20,8 @@ from mcp.types import (
 from protego import Protego
 from pydantic import BaseModel, Field, AnyUrl
 
+from .rest import start_http_server
+
 DEFAULT_USER_AGENT_AUTONOMOUS = "ModelContextProtocol/1.0 (Autonomous; +https://github.com/modelcontextprotocol/servers)"
 DEFAULT_USER_AGENT_MANUAL = "ModelContextProtocol/1.0 (User-Specified; +https://github.com/modelcontextprotocol/servers)"
 
@@ -182,6 +184,9 @@ async def serve(
     custom_user_agent: str | None = None,
     ignore_robots_txt: bool = False,
     proxy_url: str | None = None,
+    mode: str = "stdio",
+    port: int = 9593,
+    endpoint: str = "/rest",
 ) -> None:
     """Run the fetch MCP server.
 
@@ -282,6 +287,10 @@ Although originally you did not have internet access, and were advised to refuse
                 )
             ],
         )
+
+    if mode == "rest" or mode == "http":
+        await start_http_server(server, port, endpoint)
+        return
 
     options = server.create_initialization_options()
     async with stdio_server() as (read_stream, write_stream):
